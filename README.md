@@ -70,7 +70,7 @@ Path to generated file (default: `./README.md`)
 
 ### `includeForks`
 
-Include forked repositories when calculating the stats (default: `false`)
+Include forked repositories when calculating the stats (default: `false`). When enabled, stats will include both your source repositories and your forks.
 
 ## Template Strings
 

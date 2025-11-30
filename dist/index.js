@@ -30638,7 +30638,7 @@ async function getUserInfo(gql, includeForks = false) {
                     }
                 }
             }
-            repositories(affiliations: OWNER, isFork: ${includeForks}, first: 100) {
+            repositories(affiliations: OWNER, ${includeForks ? '' : 'isFork: false,'} first: 100) {
                 totalCount
                 nodes {
                     stargazers {
