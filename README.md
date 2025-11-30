@@ -103,6 +103,42 @@ Total number of repositories you contributed to.
 
 Total number of stars on all your gists and repositories.
 
+#### `{{ FOLLOWERS }}`
+
+Total number of followers.
+
+#### `{{ FOLLOWING }}`
+
+Total number of people you are following.
+
+#### `{{ SPONSORS }}`
+
+Total number of people sponsoring you.
+
+#### `{{ SPONSORING }}`
+
+Total number of people you are sponsoring.
+
+#### `{{ DISCUSSIONS_STARTED }}`
+
+Total number of discussions you started.
+
+#### `{{ DISCUSSIONS_ANSWERED }}`
+
+Total number of discussions you answered (comments).
+
+#### `{{ COMMIT_STREAK }}`
+
+Your current commit streak in days (based on the last 365 days).
+
+#### `{{ LONGEST_COMMIT_STREAK }}`
+
+Your longest commit streak in days (based on the last 365 days).
+
+#### `{{ RECENT_ACTIVITY }}`
+
+A list of your last 5 pull requests.
+
 ### Languages
 
 A region that will be repeated for every language you use in your repositories.

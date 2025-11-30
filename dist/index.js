@@ -30598,14 +30598,37 @@ async function getUserInfo(gql, includeForks = false) {
     const query = `{
         viewer {
             createdAt
+            followers { totalCount }
+            following { totalCount }
+            sponsorshipsAsMaintainer { totalCount }
+            sponsorshipsAsSponsor { totalCount }
+            repositoryDiscussionComments { totalCount }
+            repositoryDiscussions { totalCount }
             issues {
                 totalCount
             }
-            pullRequests {
+            pullRequests(first: 5, orderBy: {field: CREATED_AT, direction: DESC}) {
                 totalCount
+                nodes {
+                    title
+                    url
+                    createdAt
+                    repository {
+                        nameWithOwner
+                        url
+                    }
+                }
             }
             contributionsCollection {
                 contributionYears
+                contributionCalendar {
+                    weeks {
+                        contributionDays {
+                            contributionCount
+                            date
+                        }
+                    }
+                }
             }
             gists(first: 100) {
                 totalCount
@@ -30638,17 +30661,30 @@ async function getUserInfo(gql, includeForks = false) {
         }
         rateLimit { cost remaining resetAt }
     }`;
-    const { viewer: { createdAt, issues, pullRequests, contributionsCollection: { contributionYears }, gists, repositories, repositoriesContributedTo, }, } = await gql(query);
+    const { viewer: { createdAt, followers, following, sponsorshipsAsMaintainer, sponsorshipsAsSponsor, repositoryDiscussionComments, repositoryDiscussions, issues, pullRequests, contributionsCollection: { contributionYears, contributionCalendar }, gists, repositories, repositoriesContributedTo, }, } = await gql(query);
     const accountAgeMS = Date.now() - new Date(createdAt).getTime();
     const accountAge = Math.floor(accountAgeMS / (1000 * 60 * 60 * 24 * 365.25));
     const stars = [...gists.nodes, ...repositories.nodes]
         .map(gist => gist.stargazers.totalCount)
         .reduce((total, current) => total + current, 0);
+    const { currentStreak, longestStreak } = calculateStreak(contributionCalendar);
+    const recentActivity = pullRequests.nodes
+        .map(pr => `<li><a href="${pr.url}">${pr.title}</a> in <a href="${pr.repository.url}">${pr.repository.nameWithOwner}</a></li>`)
+        .join('\n');
     return {
         accountAge,
+        followers: followers.totalCount,
+        following: following.totalCount,
+        sponsors: sponsorshipsAsMaintainer.totalCount,
+        sponsoring: sponsorshipsAsSponsor.totalCount,
+        discussionsStarted: repositoryDiscussions.totalCount,
+        discussionsAnswered: repositoryDiscussionComments.totalCount,
         issues: issues.totalCount,
         pullRequests: pullRequests.totalCount,
         contributionYears,
+        currentStreak,
+        longestStreak,
+        recentActivity: `<ul>\n${recentActivity}\n</ul>`,
         gists: gists.totalCount,
         repositories: repositories.totalCount,
         repositoryNodes: repositories.nodes,
@@ -30657,6 +30693,49 @@ async function getUserInfo(gql, includeForks = false) {
     };
 }
 exports.getUserInfo = getUserInfo;
+function calculateStreak(calendar) {
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+    let isCurrentStreak = true;
+    const days = calendar.weeks
+        .flatMap(week => week.contributionDays)
+        .reverse(); // Start from today
+    // Check if today has contributions, if not, check yesterday to start streak
+    const today = new Date().toISOString().split('T')[0];
+    const todayContrib = days.find(d => d.date === today);
+    // If no contribution today, we can still be in a streak if we contributed yesterday
+    // But if we didn't contribute today OR yesterday, current streak is 0
+    for (const day of days) {
+        if (day.contributionCount > 0) {
+            tempStreak++;
+        }
+        else {
+            // If we hit a day with 0 contributions
+            if (isCurrentStreak) {
+                // If we haven't broken the initial chain yet, this is our current streak
+                // Exception: if the 0 contribution day is TODAY, we don't break the streak yet (unless yesterday was also 0)
+                if (day.date !== today) {
+                    currentStreak = tempStreak;
+                    isCurrentStreak = false;
+                }
+            }
+            if (tempStreak > longestStreak) {
+                longestStreak = tempStreak;
+            }
+            tempStreak = 0;
+        }
+    }
+    // Final check in case the longest streak was the last one
+    if (tempStreak > longestStreak) {
+        longestStreak = tempStreak;
+    }
+    // If we never broke the first chain (e.g. contributed every day), current = temp
+    if (isCurrentStreak) {
+        currentStreak = tempStreak;
+    }
+    return { currentStreak, longestStreak };
+}
 async function getTotalCommits(gql, contributionYears) {
     let query = '{viewer{';
     for (const year of contributionYears) {
@@ -30729,7 +30808,7 @@ async function run() {
     const gql = graphql_1.graphql.defaults({
         headers: { authorization: `token ${token}` },
     });
-    const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, } = await (0, api_1.getUserInfo)(gql, includeForks);
+    const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, followers, following, sponsors, sponsoring, discussionsStarted, discussionsAnswered, currentStreak, longestStreak, recentActivity, } = await (0, api_1.getUserInfo)(gql, includeForks);
     const totalCommits = await (0, api_1.getTotalCommits)(gql, contributionYears);
     const totalReviews = await (0, api_1.getTotalReviews)(gql, contributionYears);
     let o = await fs_1.promises.readFile(template, { encoding: 'utf8' });
@@ -30743,6 +30822,15 @@ async function run() {
     o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.REPOSITORIES, repositories);
     o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.REPOSITORIES_CONTRIBUTED_TO, repositoriesContributedTo);
     o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.STARS, stars);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.FOLLOWERS, followers);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.FOLLOWING, following);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.SPONSORS, sponsors);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.SPONSORING, sponsoring);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.DISCUSSIONS_STARTED, discussionsStarted);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.DISCUSSIONS_ANSWERED, discussionsAnswered);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.COMMIT_STREAK, currentStreak);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.LONGEST_COMMIT_STREAK, longestStreak);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.RECENT_ACTIVITY, recentActivity);
     await fs_1.promises.writeFile(readme, o);
 }
 
@@ -30883,6 +30971,15 @@ var TPL_STR;
     TPL_STR["REPOSITORIES"] = "REPOSITORIES";
     TPL_STR["REPOSITORIES_CONTRIBUTED_TO"] = "REPOSITORIES_CONTRIBUTED_TO";
     TPL_STR["STARS"] = "STARS";
+    TPL_STR["FOLLOWERS"] = "FOLLOWERS";
+    TPL_STR["FOLLOWING"] = "FOLLOWING";
+    TPL_STR["SPONSORS"] = "SPONSORS";
+    TPL_STR["SPONSORING"] = "SPONSORING";
+    TPL_STR["DISCUSSIONS_STARTED"] = "DISCUSSIONS_STARTED";
+    TPL_STR["DISCUSSIONS_ANSWERED"] = "DISCUSSIONS_ANSWERED";
+    TPL_STR["COMMIT_STREAK"] = "COMMIT_STREAK";
+    TPL_STR["LONGEST_COMMIT_STREAK"] = "LONGEST_COMMIT_STREAK";
+    TPL_STR["RECENT_ACTIVITY"] = "RECENT_ACTIVITY";
 })(TPL_STR = exports.TPL_STR || (exports.TPL_STR = {}));
 
 

@@ -27,6 +27,15 @@ async function run(): Promise<void> {
         repositoryNodes,
         repositoriesContributedTo,
         stars,
+        followers,
+        following,
+        sponsors,
+        sponsoring,
+        discussionsStarted,
+        discussionsAnswered,
+        currentStreak,
+        longestStreak,
+        recentActivity,
     } = await getUserInfo(gql, includeForks)
 
     const totalCommits = await getTotalCommits(gql, contributionYears)
@@ -47,5 +56,14 @@ async function run(): Promise<void> {
         repositoriesContributedTo
     )
     o = replaceStringTemplate(o, TPL_STR.STARS, stars)
+    o = replaceStringTemplate(o, TPL_STR.FOLLOWERS, followers)
+    o = replaceStringTemplate(o, TPL_STR.FOLLOWING, following)
+    o = replaceStringTemplate(o, TPL_STR.SPONSORS, sponsors)
+    o = replaceStringTemplate(o, TPL_STR.SPONSORING, sponsoring)
+    o = replaceStringTemplate(o, TPL_STR.DISCUSSIONS_STARTED, discussionsStarted)
+    o = replaceStringTemplate(o, TPL_STR.DISCUSSIONS_ANSWERED, discussionsAnswered)
+    o = replaceStringTemplate(o, TPL_STR.COMMIT_STREAK, currentStreak)
+    o = replaceStringTemplate(o, TPL_STR.LONGEST_COMMIT_STREAK, longestStreak)
+    o = replaceStringTemplate(o, TPL_STR.RECENT_ACTIVITY, recentActivity)
     await fs.writeFile(readme, o)
 }
