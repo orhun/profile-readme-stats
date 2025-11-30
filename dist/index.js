@@ -7539,95 +7539,16 @@ function wrappy (fn, cb) {
 
 /***/ }),
 
-/***/ 399:
-/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+/***/ 8229:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
 
 "use strict";
 
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    var desc = Object.getOwnPropertyDescriptor(m, k);
-    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
-    }
-    Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
-    if (k2 === undefined) k2 = k;
-    o[k2] = m[k];
-}));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
-    Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
-    o["default"] = v;
-});
-var __importStar = (this && this.__importStar) || function (mod) {
-    if (mod && mod.__esModule) return mod;
-    var result = {};
-    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
-    __setModuleDefault(result, mod);
-    return result;
-};
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-const fs_1 = __nccwpck_require__(7147);
-const core = __importStar(__nccwpck_require__(2186));
-const graphql_1 = __nccwpck_require__(8467);
-/** template strings */
-var TPL_STR;
-(function (TPL_STR) {
-    TPL_STR["LANGUAGE_TEMPLATE_START"] = "LANGUAGE_TEMPLATE_START";
-    TPL_STR["LANGUAGE_TEMPLATE_END"] = "LANGUAGE_TEMPLATE_END";
-    TPL_STR["LANGUAGE_NAME"] = "LANGUAGE_NAME";
-    TPL_STR["LANGUAGE_PERCENT"] = "LANGUAGE_PERCENT";
-    TPL_STR["LANGUAGE_COLOR"] = "LANGUAGE_COLOR";
-    TPL_STR["ACCOUNT_AGE"] = "ACCOUNT_AGE";
-    TPL_STR["ISSUES"] = "ISSUES";
-    TPL_STR["PULL_REQUESTS"] = "PULL_REQUESTS";
-    TPL_STR["CODE_REVIEWS"] = "CODE_REVIEWS";
-    TPL_STR["COMMITS"] = "COMMITS";
-    TPL_STR["GISTS"] = "GISTS";
-    TPL_STR["REPOSITORIES"] = "REPOSITORIES";
-    TPL_STR["REPOSITORIES_CONTRIBUTED_TO"] = "REPOSITORIES_CONTRIBUTED_TO";
-    TPL_STR["STARS"] = "STARS";
-})(TPL_STR || (TPL_STR = {}));
-run().catch(error => core.setFailed(error.message));
-function run() {
-    return __awaiter(this, void 0, void 0, function* () {
-        const token = core.getInput('token');
-        const template = core.getInput('template');
-        const readme = core.getInput('readme');
-        const includeForks = core.getInput('includeForks') === 'true';
-        const gql = graphql_1.graphql.defaults({
-            headers: { authorization: `token ${token}` },
-        });
-        const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, } = yield getUserInfo(gql, includeForks);
-        const totalCommits = yield getTotalCommits(gql, contributionYears);
-        const totalReviews = yield getTotalReviews(gql, contributionYears);
-        let o = yield fs_1.promises.readFile(template, { encoding: 'utf8' });
-        o = replaceLanguageTemplate(o, repositoryNodes);
-        o = replaceStringTemplate(o, TPL_STR.ACCOUNT_AGE, accountAge);
-        o = replaceStringTemplate(o, TPL_STR.ISSUES, issues);
-        o = replaceStringTemplate(o, TPL_STR.PULL_REQUESTS, pullRequests);
-        o = replaceStringTemplate(o, TPL_STR.COMMITS, totalCommits);
-        o = replaceStringTemplate(o, TPL_STR.CODE_REVIEWS, totalReviews);
-        o = replaceStringTemplate(o, TPL_STR.GISTS, gists);
-        o = replaceStringTemplate(o, TPL_STR.REPOSITORIES, repositories);
-        o = replaceStringTemplate(o, TPL_STR.REPOSITORIES_CONTRIBUTED_TO, repositoriesContributedTo);
-        o = replaceStringTemplate(o, TPL_STR.STARS, stars);
-        yield fs_1.promises.writeFile(readme, o);
-    });
-}
-function getUserInfo(gql, includeForks = false) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const query = `{
+exports.getTotalReviews = exports.getTotalCommits = exports.getUserInfo = void 0;
+const utils_1 = __nccwpck_require__(1314);
+async function getUserInfo(gql, includeForks = false) {
+    const query = `{
         viewer {
             createdAt
             issues {
@@ -7670,89 +7591,141 @@ function getUserInfo(gql, includeForks = false) {
         }
         rateLimit { cost remaining resetAt }
     }`;
-        const { viewer: { createdAt, issues, pullRequests, contributionsCollection: { contributionYears }, gists, repositories, repositoriesContributedTo, }, } = yield gql(query);
-        const accountAgeMS = Date.now() - new Date(createdAt).getTime();
-        const accountAge = Math.floor(accountAgeMS / (1000 * 60 * 60 * 24 * 365.25));
-        const stars = [...gists.nodes, ...repositories.nodes]
-            .map(gist => gist.stargazers.totalCount)
-            .reduce((total, current) => total + current, 0);
-        return {
-            accountAge,
-            issues: issues.totalCount,
-            pullRequests: pullRequests.totalCount,
-            contributionYears,
-            gists: gists.totalCount,
-            repositories: repositories.totalCount,
-            repositoryNodes: repositories.nodes,
-            repositoriesContributedTo: repositoriesContributedTo.totalCount,
-            stars,
-        };
-    });
+    const { viewer: { createdAt, issues, pullRequests, contributionsCollection: { contributionYears }, gists, repositories, repositoriesContributedTo, }, } = await gql(query);
+    const accountAgeMS = Date.now() - new Date(createdAt).getTime();
+    const accountAge = Math.floor(accountAgeMS / (1000 * 60 * 60 * 24 * 365.25));
+    const stars = [...gists.nodes, ...repositories.nodes]
+        .map(gist => gist.stargazers.totalCount)
+        .reduce((total, current) => total + current, 0);
+    return {
+        accountAge,
+        issues: issues.totalCount,
+        pullRequests: pullRequests.totalCount,
+        contributionYears,
+        gists: gists.totalCount,
+        repositories: repositories.totalCount,
+        repositoryNodes: repositories.nodes,
+        repositoriesContributedTo: repositoriesContributedTo.totalCount,
+        stars,
+    };
 }
-function getTotalCommits(gql, contributionYears) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let query = '{viewer{';
-        for (const year of contributionYears) {
-            query += `_${year}: contributionsCollection(from: "${getDateTime(year)}") { totalCommitContributions }`;
-        }
-        query += '}}';
-        const result = yield gql(query);
-        return Object.keys(result.viewer)
-            .map(key => result.viewer[key].totalCommitContributions)
-            .reduce((total, current) => total + current, 0);
-    });
-}
-function getTotalReviews(gql, contributionYears) {
-    return __awaiter(this, void 0, void 0, function* () {
-        let query = '{viewer{';
-        for (const year of contributionYears) {
-            query += `_${year}: contributionsCollection(from: "${getDateTime(year)}") { totalPullRequestReviewContributions }`;
-        }
-        query += '}}';
-        const result = yield gql(query);
-        return Object.keys(result.viewer)
-            .map(key => result.viewer[key].totalPullRequestReviewContributions)
-            .reduce((total, current) => total + current, 0);
-    });
-}
-function getDateTime(year) {
-    const date = new Date();
-    date.setUTCFullYear(year, 0, 1);
-    date.setUTCHours(0, 0, 0, 0);
-    return date.toISOString();
-}
-function buildRegex(name, newLine = false) {
-    let str = `\\{\\{\\s*${name}(?::(?<opts>.+?))?\\s*\\}\\}`;
-    if (newLine)
-        str += '\n?';
-    return new RegExp(str, 'g');
-}
-function getOptsMap(opts) {
-    var _a, _b;
-    const opt = new Map();
-    for (const match of opts.matchAll(/(?<key>[^=;]+)(?:=(?<value>[^;]+))?/g)) {
-        const key = (_a = match.groups) === null || _a === void 0 ? void 0 : _a.key;
-        const value = (_b = match.groups) === null || _b === void 0 ? void 0 : _b.value;
-        if (key)
-            opt.set(key, value);
+exports.getUserInfo = getUserInfo;
+async function getTotalCommits(gql, contributionYears) {
+    let query = '{viewer{';
+    for (const year of contributionYears) {
+        query += `_${year}: contributionsCollection(from: "${(0, utils_1.getDateTime)(year)}") { totalCommitContributions }`;
     }
-    return opt;
+    query += '}}';
+    const result = await gql(query);
+    return Object.keys(result.viewer)
+        .map(key => result.viewer[key].totalCommitContributions)
+        .reduce((total, current) => total + current, 0);
 }
+exports.getTotalCommits = getTotalCommits;
+async function getTotalReviews(gql, contributionYears) {
+    let query = '{viewer{';
+    for (const year of contributionYears) {
+        query += `_${year}: contributionsCollection(from: "${(0, utils_1.getDateTime)(year)}") { totalPullRequestReviewContributions }`;
+    }
+    query += '}}';
+    const result = await gql(query);
+    return Object.keys(result.viewer)
+        .map(key => result.viewer[key].totalPullRequestReviewContributions)
+        .reduce((total, current) => total + current, 0);
+}
+exports.getTotalReviews = getTotalReviews;
+
+
+/***/ }),
+
+/***/ 399:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const fs_1 = __nccwpck_require__(7147);
+const core = __importStar(__nccwpck_require__(2186));
+const graphql_1 = __nccwpck_require__(8467);
+const types_1 = __nccwpck_require__(5077);
+const api_1 = __nccwpck_require__(8229);
+const template_1 = __nccwpck_require__(3932);
+run().catch(error => core.setFailed(error.message));
+async function run() {
+    const token = core.getInput('token');
+    const template = core.getInput('template');
+    const readme = core.getInput('readme');
+    const includeForks = core.getInput('includeForks') === 'true';
+    const gql = graphql_1.graphql.defaults({
+        headers: { authorization: `token ${token}` },
+    });
+    const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, } = await (0, api_1.getUserInfo)(gql, includeForks);
+    const totalCommits = await (0, api_1.getTotalCommits)(gql, contributionYears);
+    const totalReviews = await (0, api_1.getTotalReviews)(gql, contributionYears);
+    let o = await fs_1.promises.readFile(template, { encoding: 'utf8' });
+    o = (0, template_1.replaceLanguageTemplate)(o, repositoryNodes);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.ACCOUNT_AGE, accountAge);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.ISSUES, issues);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.PULL_REQUESTS, pullRequests);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.COMMITS, totalCommits);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.CODE_REVIEWS, totalReviews);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.GISTS, gists);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.REPOSITORIES, repositories);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.REPOSITORIES_CONTRIBUTED_TO, repositoriesContributedTo);
+    o = (0, template_1.replaceStringTemplate)(o, types_1.TPL_STR.STARS, stars);
+    await fs_1.promises.writeFile(readme, o);
+}
+
+
+/***/ }),
+
+/***/ 3932:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getLanguages = exports.replaceLanguageTemplate = exports.replaceStringTemplate = void 0;
+const types_1 = __nccwpck_require__(5077);
+const utils_1 = __nccwpck_require__(1314);
 function replaceStringTemplate(input, name, value) {
-    return input.replace(buildRegex(name), (_, opts) => opts && getOptsMap(opts).has('uri')
+    return input.replace((0, utils_1.buildRegex)(name), (_, opts) => opts && (0, utils_1.getOptsMap)(opts).has('uri')
         ? encodeURIComponent(value)
         : String(value));
 }
+exports.replaceStringTemplate = replaceStringTemplate;
 function replaceLanguageTemplate(input, repositories) {
-    var _a;
-    const rStart = buildRegex(TPL_STR.LANGUAGE_TEMPLATE_START, true);
-    const rEnd = buildRegex(TPL_STR.LANGUAGE_TEMPLATE_END, true);
+    const rStart = (0, utils_1.buildRegex)(types_1.TPL_STR.LANGUAGE_TEMPLATE_START, true);
+    const rEnd = (0, utils_1.buildRegex)(types_1.TPL_STR.LANGUAGE_TEMPLATE_END, true);
     const replacements = [];
     for (const match of input.matchAll(rStart)) {
         if (match.index === undefined)
             continue;
-        const opts = (_a = match.groups) === null || _a === void 0 ? void 0 : _a.opts;
-        const max = (opts && Number(getOptsMap(opts).get('max'))) || 8;
+        const opts = match.groups?.opts;
+        const max = (opts && Number((0, utils_1.getOptsMap)(opts).get('max'))) || 8;
         const end = match.index + match[0].length;
         const s = input.substring(end);
         const endMatch = s.search(rEnd);
@@ -7762,9 +7735,9 @@ function replaceLanguageTemplate(input, repositories) {
         const replacement = getLanguages(repositories, max)
             .map(lang => {
             let res = str;
-            res = replaceStringTemplate(res, TPL_STR.LANGUAGE_NAME, lang.name);
-            res = replaceStringTemplate(res, TPL_STR.LANGUAGE_PERCENT, lang.percent);
-            res = replaceStringTemplate(res, TPL_STR.LANGUAGE_COLOR, lang.color);
+            res = replaceStringTemplate(res, types_1.TPL_STR.LANGUAGE_NAME, lang.name);
+            res = replaceStringTemplate(res, types_1.TPL_STR.LANGUAGE_PERCENT, lang.percent);
+            res = replaceStringTemplate(res, types_1.TPL_STR.LANGUAGE_COLOR, lang.color);
             return res;
         })
             .reduce((acc, parts) => acc + parts, '');
@@ -7785,6 +7758,7 @@ function replaceLanguageTemplate(input, repositories) {
     output = output.replace(rStart, '').replace(rEnd, '');
     return output;
 }
+exports.replaceLanguageTemplate = replaceLanguageTemplate;
 function getLanguages(repositories, max) {
     const languages = new Map();
     for (const repo of repositories) {
@@ -7834,6 +7808,71 @@ function getLanguages(repositories, max) {
     }
     return langs;
 }
+exports.getLanguages = getLanguages;
+
+
+/***/ }),
+
+/***/ 5077:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.TPL_STR = void 0;
+var TPL_STR;
+(function (TPL_STR) {
+    TPL_STR["LANGUAGE_TEMPLATE_START"] = "LANGUAGE_TEMPLATE_START";
+    TPL_STR["LANGUAGE_TEMPLATE_END"] = "LANGUAGE_TEMPLATE_END";
+    TPL_STR["LANGUAGE_NAME"] = "LANGUAGE_NAME";
+    TPL_STR["LANGUAGE_PERCENT"] = "LANGUAGE_PERCENT";
+    TPL_STR["LANGUAGE_COLOR"] = "LANGUAGE_COLOR";
+    TPL_STR["ACCOUNT_AGE"] = "ACCOUNT_AGE";
+    TPL_STR["ISSUES"] = "ISSUES";
+    TPL_STR["PULL_REQUESTS"] = "PULL_REQUESTS";
+    TPL_STR["CODE_REVIEWS"] = "CODE_REVIEWS";
+    TPL_STR["COMMITS"] = "COMMITS";
+    TPL_STR["GISTS"] = "GISTS";
+    TPL_STR["REPOSITORIES"] = "REPOSITORIES";
+    TPL_STR["REPOSITORIES_CONTRIBUTED_TO"] = "REPOSITORIES_CONTRIBUTED_TO";
+    TPL_STR["STARS"] = "STARS";
+})(TPL_STR = exports.TPL_STR || (exports.TPL_STR = {}));
+
+
+/***/ }),
+
+/***/ 1314:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.getOptsMap = exports.buildRegex = exports.getDateTime = void 0;
+function getDateTime(year) {
+    const date = new Date();
+    date.setUTCFullYear(year, 0, 1);
+    date.setUTCHours(0, 0, 0, 0);
+    return date.toISOString();
+}
+exports.getDateTime = getDateTime;
+function buildRegex(name, newLine = false) {
+    let str = `\\{\\{\\s*${name}(?::(?<opts>.+?))?\\s*\\}\\}`;
+    if (newLine)
+        str += '\\n?';
+    return new RegExp(str, 'g');
+}
+exports.buildRegex = buildRegex;
+function getOptsMap(opts) {
+    const opt = new Map();
+    for (const match of opts.matchAll(/(?<key>[^=;]+)(?:=(?<value>[^;]+))?/g)) {
+        const key = match.groups?.key;
+        const value = match.groups?.value;
+        if (key)
+            opt.set(key, value);
+    }
+    return opt;
+}
+exports.getOptsMap = getOptsMap;
 
 
 /***/ }),
