@@ -30592,9 +30592,9 @@ function wrappy (fn, cb) {
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getTotalReviews = exports.getTotalCommits = exports.getUserInfo = void 0;
+exports.getAllContributionWeeks = exports.getTotalReviews = exports.getTotalCommits = exports.calculateStreak = exports.getUserInfo = void 0;
 const utils_1 = __nccwpck_require__(1314);
-async function getUserInfo(gql, includeForks = false) {
+async function getUserInfo(gql, includeForks = false, includeLifetime = false) {
     const query = `{
         viewer {
             createdAt
@@ -30661,13 +30661,16 @@ async function getUserInfo(gql, includeForks = false) {
         }
         rateLimit { cost remaining resetAt }
     }`;
-    const { viewer: { createdAt, followers, following, sponsorshipsAsMaintainer, sponsorshipsAsSponsor, repositoryDiscussionComments, repositoryDiscussions, issues, pullRequests, contributionsCollection: { contributionYears, contributionCalendar }, gists, repositories, repositoriesContributedTo, }, } = await gql(query);
+    const { viewer: { createdAt, followers, following, sponsorshipsAsMaintainer, sponsorshipsAsSponsor, repositoryDiscussionComments, repositoryDiscussions, issues, pullRequests, contributionsCollection: { contributionYears, contributionCalendar, }, gists, repositories, repositoriesContributedTo, }, } = await gql(query);
     const accountAgeMS = Date.now() - new Date(createdAt).getTime();
     const accountAge = Math.floor(accountAgeMS / (1000 * 60 * 60 * 24 * 365.25));
     const stars = [...gists.nodes, ...repositories.nodes]
         .map(gist => gist.stargazers.totalCount)
         .reduce((total, current) => total + current, 0);
-    const { currentStreak, longestStreak } = calculateStreak(contributionCalendar);
+    const weeks = includeLifetime
+        ? await getAllContributionWeeks(gql, contributionYears)
+        : contributionCalendar.weeks;
+    const { currentStreak, longestStreak } = calculateStreak(weeks, includeLifetime);
     const recentActivity = pullRequests.nodes
         .map(pr => `<li><a href="${pr.url}">${pr.title}</a> in <a href="${pr.repository.url}">${pr.repository.nameWithOwner}</a></li>`)
         .join('\n');
@@ -30693,14 +30696,28 @@ async function getUserInfo(gql, includeForks = false) {
     };
 }
 exports.getUserInfo = getUserInfo;
-function calculateStreak(calendar) {
+function calculateStreak(weeks, includeLifetime = false) {
     let currentStreak = 0;
     let longestStreak = 0;
     let tempStreak = 0;
     let isCurrentStreak = true;
-    const days = calendar.weeks
+    const todayDate = new Date();
+    const todayStr = todayDate.toISOString().split('T')[0];
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(todayDate.getFullYear() - 1);
+    const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+    const seenDates = new Set();
+    const days = weeks
         .flatMap(week => week.contributionDays)
-        .reverse(); // Start from today
+        .filter(day => {
+        if (seenDates.has(day.date))
+            return false;
+        seenDates.add(day.date);
+        return true;
+    })
+        .filter(day => (includeLifetime ? true : day.date >= oneYearAgoStr))
+        .filter(day => day.date <= todayStr)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()); // Ensure descending order (Newest -> Oldest)
     // Check if today has contributions, if not, check yesterday to start streak
     const today = new Date().toISOString().split('T')[0];
     const todayContrib = days.find(d => d.date === today);
@@ -30736,6 +30753,7 @@ function calculateStreak(calendar) {
     }
     return { currentStreak, longestStreak };
 }
+exports.calculateStreak = calculateStreak;
 async function getTotalCommits(gql, contributionYears) {
     let query = '{viewer{';
     for (const year of contributionYears) {
@@ -30760,6 +30778,25 @@ async function getTotalReviews(gql, contributionYears) {
         .reduce((total, current) => total + current, 0);
 }
 exports.getTotalReviews = getTotalReviews;
+async function getAllContributionWeeks(gql, contributionYears) {
+    let query = '{viewer{';
+    for (const year of contributionYears) {
+        query += `_${year}: contributionsCollection(from: "${(0, utils_1.getDateTime)(year)}") { contributionCalendar { weeks { contributionDays { contributionCount date } } } }`;
+    }
+    query += '}}';
+    const result = await gql(query);
+    // Ensure years are sorted ascending to maintain timeline (Oldest -> Newest)
+    // keys are like "_2023", "_2022"
+    return Object.keys(result.viewer)
+        .sort((a, b) => {
+        const yearA = parseInt(a.substring(1));
+        const yearB = parseInt(b.substring(1));
+        return yearA - yearB;
+    })
+        .map(key => result.viewer[key].contributionCalendar.weeks)
+        .flat();
+}
+exports.getAllContributionWeeks = getAllContributionWeeks;
 
 
 /***/ }),
@@ -30805,10 +30842,11 @@ async function run() {
     const template = core.getInput('template');
     const readme = core.getInput('readme');
     const includeForks = core.getInput('includeForks') === 'true';
+    const lifetimeStreak = core.getInput('lifetime_streak') === 'true';
     const gql = graphql_1.graphql.defaults({
         headers: { authorization: `token ${token}` },
     });
-    const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, followers, following, sponsors, sponsoring, discussionsStarted, discussionsAnswered, currentStreak, longestStreak, recentActivity, } = await (0, api_1.getUserInfo)(gql, includeForks);
+    const { accountAge, issues, pullRequests, contributionYears, gists, repositories, repositoryNodes, repositoriesContributedTo, stars, followers, following, sponsors, sponsoring, discussionsStarted, discussionsAnswered, currentStreak, longestStreak, recentActivity, } = await (0, api_1.getUserInfo)(gql, includeForks, lifetimeStreak);
     const totalCommits = await (0, api_1.getTotalCommits)(gql, contributionYears);
     const totalReviews = await (0, api_1.getTotalReviews)(gql, contributionYears);
     let o = await fs_1.promises.readFile(template, { encoding: 'utf8' });

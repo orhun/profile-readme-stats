@@ -13,7 +13,10 @@ export function replaceStringTemplate(
     )
 }
 
-export function replaceLanguageTemplate(input: string, repositories: Repository[]) {
+export function replaceLanguageTemplate(
+    input: string,
+    repositories: Repository[]
+) {
     const rStart = buildRegex(TPL_STR.LANGUAGE_TEMPLATE_START, true)
     const rEnd = buildRegex(TPL_STR.LANGUAGE_TEMPLATE_END, true)
 

@@ -24,6 +24,8 @@ jobs:
         with:
           token: ${{ secrets.USER_TOKEN }}
           readme: './OUTPUT.md'
+          includeForks: true
+          lifetime_streak: true
       - name: Check Status
         run: |
           if [[ "$(git status --porcelain)" != "" ]]; then

@@ -16,6 +16,10 @@ inputs:
     description: 'Include forked repositories when calculating the stats'
     required: false
     default: false
+  lifetime_streak:
+    description: 'Calculate streak from account creation date'
+    required: false
+    default: false
 runs:
   using: 'node20'
   main: 'dist/index.js'
