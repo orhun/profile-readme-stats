@@ -30842,7 +30842,7 @@ async function run() {
     const template = core.getInput('template');
     const readme = core.getInput('readme');
     const includeForks = core.getInput('includeForks') === 'true';
-    const lifetimeStreak = core.getInput('lifetime_streak') === 'true';
+    const lifetimeStreak = core.getInput('lifetimeStreak') === 'true';
     const gql = graphql_1.graphql.defaults({
         headers: { authorization: `token ${token}` },
     });

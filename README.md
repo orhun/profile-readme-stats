@@ -16,7 +16,7 @@ This action provides [template strings](#template-strings) that are replaced wit
     - [`template`](#template)
     - [`readme`](#readme)
     - [`includeForks`](#includeforks)
-    - [`lifetime_streak`](#lifetime_streak)
+    - [`lifetimeStreak`](#lifetimestreak)
   - [Template Strings](#template-strings)
     - [General](#general)
       - [`{{ ACCOUNT_AGE }}`](#-account_age-)
@@ -73,7 +73,7 @@ Path to generated file (default: `./README.md`)
 
 Include forked repositories when calculating the stats (default: `false`). When enabled, stats will include both your source repositories and your forks.
 
-### `lifetime_streak`
+### `lifetimeStreak`
 
 Calculate commit streaks based on the account creation date instead of the last year (default: `false`). When enabled, your streak will be calculated from your first contribution.
 
@@ -143,11 +143,11 @@ Total number of discussions you answered (comments).
 
 #### `{{ COMMIT_STREAK }}`
 
-Your current commit streak in days (based on the last 365 days, or account creation if `lifetime_streak` is enabled).
+Your current commit streak in days (based on the last 365 days, or account creation if `lifetimeStreak` is enabled).
 
 #### `{{ LONGEST_COMMIT_STREAK }}`
 
-Your longest commit streak in days (based on the last 365 days, or account creation if `lifetime_streak` is enabled).
+Your longest commit streak in days (based on the last 365 days, or account creation if `lifetimeStreak` is enabled).
 
 #### `{{ RECENT_ACTIVITY }}`
 

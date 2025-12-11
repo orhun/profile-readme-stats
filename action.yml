@@ -16,7 +16,7 @@ inputs:
     description: 'Include forked repositories when calculating the stats'
     required: false
     default: false
-  lifetime_streak:
+  lifetimeStreak:
     description: 'Calculate streak from account creation date'
     required: false
     default: false
