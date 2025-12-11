@@ -21,7 +21,6 @@ Own **51** repositories
 Contributed to **2** public repositories
 
 **Recent Activity:**
-
 <ul>
 <li><a href="https://github.com/orhun/profile-readme-stats/pull/1">Refactor codebase, add tests, and implement new profile stats</a> in <a href="https://github.com/orhun/profile-readme-stats">orhun/profile-readme-stats</a></li>
 <li><a href="https://github.com/night-slayer18/ugit/pull/4">Ugit features</a> in <a href="https://github.com/night-slayer18/ugit">night-slayer18/ugit</a></li>
